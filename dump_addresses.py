@@ -21,47 +21,32 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import itertools
 import sys
 from functools import partial
 from multiprocessing import Pool
+from electrum import keystore, bitcoin
 
-import tqdm
-from electrum import keystore
-from electrum.mnemonic import Wordlist
-
-from brute.common import create_wallet
+MAX_ADDR_INDEX = 2 ** 31 - 1
 
 
-def find_matching_seed(passphrase, seed, target_address):
-    passphrase_str = " ".join(passphrase)
-    ks = keystore.from_seed(seed, passphrase_str)
-    wallet_instance = create_wallet(ks)
-    first_receiving_address = wallet_instance.get_receiving_address()
-
-    # print(" | ".join([passphrase_str, first_receiving_address]))
-
-    if first_receiving_address == target_address:
-        return passphrase_str
+def find_matching_address(index: int, ks: keystore.BIP32_KeyStore):
+    addr_pub = ks.derive_pubkey(0, index)
+    addr = bitcoin.public_key_to_p2wpkh(addr_pub)
+    return index, addr
 
 
-def main(seed_words_str, target_address):
-    seed_words = seed_words_str.split()
-    assert len(seed_words) == 12, "Wrong seed words count"
+def main(seed_words_str: str, start_index: int):
+    assert len(seed_words_str.split()) == 12, "Wrong seed words count"
 
-    wordlist = Wordlist.from_file("english.txt")
+    ks = keystore.from_seed(seed_words_str, "")
 
     with Pool() as pool:
-        perms = itertools.chain.from_iterable(
-            itertools.permutations(wordlist, n + 1) for n in range(12)
-        )
-        partial_fn = partial(find_matching_seed, seed=seed_words_str, target_address=target_address)
-        for result in tqdm.tqdm(pool.imap_unordered(partial_fn, perms)):
-            if result:
-                print(f"found it!!! {result}")
-                break
+        addr_range = range(start_index, MAX_ADDR_INDEX + 1)
+        partial_fn = partial(find_matching_address, ks=ks)
+        for (ind, addr) in pool.imap_unordered(partial_fn, addr_range, chunksize=1000):
+            sys.stdout.write(f'{ind}:{addr}\n')
 
 
 if __name__ == "__main__":
-    _, in_seed_words_str, in_addr = sys.argv
-    main(in_seed_words_str, in_addr)
+    _, in_seed_words_str, start_index_str = sys.argv
+    main(in_seed_words_str, int(start_index_str))
