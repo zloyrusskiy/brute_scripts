@@ -1,3 +1,31 @@
 ## Third-party materials used
+Part of the code in this project was taken from the [Electrum](https://github.com/spesmilo/electrum) project by Thomas Voegtlin and is licensed under the MIT license. The full text of the license can be found in the [LICENSE-Electrum](LICENSE-Electrum) file
 
-Part of the code in this project was taken from the [Electrum](https://github.com/spesmilo/electrum) project by Thomas Voegtlin and is licensed under the MIT license. The full text of the license can be found in the [LICENSE-Electrum](LICENSE-Electrum) file.
+## requirements
+ubuntu server 24.04.01 LTS
+electrum 4.1.2
+python 3.10
+
+## Installation
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install git autoconf libtool python3.10 virtualenv
+git clone https://github.com/zloyrusskiy/brute_scripts
+cd brute_scripts
+virtualenv -p python3.10 venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install --upgrade setuptools
+pip install tqdm
+pip install cryptography
+git submodule update --init --recursive
+cd electrum
+pip install .
+pip install protobuf==3.20.*
+./contrib/make_libsecp256k1.sh
+
+## run scripts example
+python brute_derivation_paths.py <seed> <addr>
+python brute_passphrase_electurm_words.py <seed> addr
+python brute_perms.py <seed> <addr>
+
