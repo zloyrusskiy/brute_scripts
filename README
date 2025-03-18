@@ -26,6 +26,6 @@ pip install protobuf==3.20.*
 
 ## run scripts example
 python brute_derivation_paths.py <seed> <addr>
-python brute_passphrase_electurm_words.py <seed> addr
+python brute_passphrase_electurm_words.py <seed> <addr>
 python brute_perms.py <seed> <addr>
 
